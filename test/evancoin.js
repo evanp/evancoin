@@ -262,76 +262,75 @@ contract('EvanCoin', function(accounts) {
         }
   });
 
+  it("should replace an ask with any amount", async () => {
 
-    it("should replace an ask with any amount", async () => {
+    let instance = await EvanCoin.deployed();
+    let HOUR = 418459;
+    let END_TIME = Date.now() + (24 * 60 * 60 * 1000);
 
-      let instance = await EvanCoin.deployed();
-      let HOUR = 418459;
-      let END_TIME = Date.now() + (24 * 60 * 60 * 1000);
+    let AMOUNT1 = web3.toWei(1, "ether");
 
-      let AMOUNT1 = web3.toWei(1, "ether");
+    let tx1 = await instance.makeAsk(HOUR, AMOUNT1, END_TIME, {from: accounts[0]});
 
-      let tx1 = await instance.makeAsk(HOUR, AMOUNT1, END_TIME, {from: accounts[0]});
+    let ask = await instance.asks.call(HOUR);
 
-      let ask = await instance.asks.call(HOUR);
+    assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
+    assert.equal(ask[1].toString(), AMOUNT1, `Ask is not for the right amount`);
+    assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
 
-      assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
-      assert.equal(ask[1].toString(), AMOUNT1, `Ask is not for the right amount`);
-      assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
+    let AMOUNT2 = web3.toWei(3, "ether");
 
-      let AMOUNT2 = web3.toWei(3, "ether");
+    assert(AMOUNT2 > AMOUNT1);
 
-      assert(AMOUNT2 > AMOUNT1);
+    let tx2 = await instance.makeAsk(HOUR, AMOUNT2, END_TIME, {from: accounts[0]});
 
-      let tx2 = await instance.makeAsk(HOUR, AMOUNT2, END_TIME, {from: accounts[0]});
+    ask = await instance.asks.call(HOUR);
 
-      ask = await instance.asks.call(HOUR);
+    assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
+    assert.equal(ask[1].toString(), AMOUNT2, `Ask is not for the right amount`);
+    assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
 
-      assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
-      assert.equal(ask[1].toString(), AMOUNT2, `Ask is not for the right amount`);
-      assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
+    let AMOUNT3 = web3.toWei(2, "ether");
 
-      let AMOUNT3 = web3.toWei(2, "ether");
+    assert(AMOUNT3 < AMOUNT2);
 
-      assert(AMOUNT3 < AMOUNT2);
+    let tx3 = await instance.makeAsk(HOUR, AMOUNT3, END_TIME, {from: accounts[0]});
 
-      let tx3 = await instance.makeAsk(HOUR, AMOUNT3, END_TIME, {from: accounts[0]});
+    ask = await instance.asks.call(HOUR);
 
-      ask = await instance.asks.call(HOUR);
+    assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
+    assert.equal(ask[1].toString(), AMOUNT3, `Ask is not for the right amount`);
+    assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
+  });
 
-      assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
-      assert.equal(ask[1].toString(), AMOUNT3, `Ask is not for the right amount`);
-      assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
-    });
+  it("should clear and refund bids when an ask is accepted", async () => {
 
-    it("should clear and refund bids when an ask is accepted", async () => {
+    let instance = await EvanCoin.deployed();
+    let HOUR = 418460;
+    let END_TIME = Date.now() + (24 * 60 * 60 * 1000);
 
-      let instance = await EvanCoin.deployed();
-      let HOUR = 418460;
-      let END_TIME = Date.now() + (24 * 60 * 60 * 1000);
+    let AMOUNT1 = web3.toWei(1, "ether");
 
-      let AMOUNT1 = web3.toWei(1, "ether");
+    let initial = await instance.pending.call(accounts[1]);
 
-      let initial = await instance.pending.call(accounts[1]);
+    let tx1 = await instance.makeBid(HOUR, END_TIME, {from: accounts[1], value: AMOUNT1});
 
-      let tx1 = await instance.makeBid(HOUR, END_TIME, {from: accounts[1], value: AMOUNT1});
+    let AMOUNT2 = web3.toWei(2, "ether");
 
-      let AMOUNT2 = web3.toWei(2, "ether");
+    let tx2 = await instance.makeAsk(HOUR, AMOUNT2, END_TIME, {from: accounts[0]});
 
-      let tx2 = await instance.makeAsk(HOUR, AMOUNT2, END_TIME, {from: accounts[0]});
+    let tx3 = await instance.acceptAsk(HOUR, {from: accounts[2], value: AMOUNT2});
 
-      let tx3 = await instance.acceptAsk(HOUR, {from: accounts[2], value: AMOUNT2});
+    let bid = await instance.bids.call(HOUR);
 
-      let bid = await instance.bids.call(HOUR);
+    assert.equal(bid[0], '0x0000000000000000000000000000000000000000', "wrong address on uninitialized bid");
+    assert.equal(bid[1].c, 0, "non-zero hour for uninitialized bid");
+    assert.equal(bid[2].toString(), 0, "non-zero amount for uninitialized bid");
+    assert.equal(bid[3].c, 0, "non-zero endTime for uninitialized bid");
 
-      assert.equal(bid[0], '0x0000000000000000000000000000000000000000', "wrong address on uninitialized bid");
-      assert.equal(bid[1].c, 0, "non-zero hour for uninitialized bid");
-      assert.equal(bid[2].toString(), 0, "non-zero amount for uninitialized bid");
-      assert.equal(bid[3].c, 0, "non-zero endTime for uninitialized bid");
+    let final = await instance.pending.call(accounts[1]);
 
-      let final = await instance.pending.call(accounts[1]);
-
-      assert.equal(final.minus(initial).toString(), AMOUNT1, "Bid was not refunded");
-    });
+    assert.equal(final.minus(initial).toString(), AMOUNT1, "Bid was not refunded");
+  });
 
 });
