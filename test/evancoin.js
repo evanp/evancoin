@@ -22,7 +22,7 @@ contract('EvanCoin', function(accounts) {
     const HOUR = 435962;
     const AMOUNT = web3.toWei(1, "ether");
     var tx = await instance.makeBid(HOUR, END_TIME, {from: accounts[1], value: AMOUNT});
-    var bid = await instance.bids.call(HOUR);
+    var bid = await await instance.bids.call(HOUR);
     assert.equal(bid[0], accounts[1], "bidder did not get recorded");
     assert.equal(bid[1].c, HOUR, "bid is for the wrong hour");
     assert.equal(bid[2].toString(), AMOUNT, "bid is for the wrong amount");
@@ -49,5 +49,63 @@ contract('EvanCoin', function(accounts) {
     assert.equal(difference, expected, `final (${final}) minus initial (${initial}) not equal to AMOUNT ${AMOUNT} minus gc ${gc}`);
     pending = await instance.pending.call(accounts[0]);
     assert.equal(pending, 0, `First account pending was not cleared (${pending} != 0)`);
+  });
+
+  it("initially bid for an hour is zeroes", async () => {
+    let instance = await EvanCoin.deployed();
+
+    const HOUR = 418452;
+
+    let initial = await instance.bids.call(HOUR);
+
+    assert.equal(initial[0], '0x0000000000000000000000000000000000000000', "wrong address on uninitialized bid");
+    assert.equal(initial[1].c, 0, "non-zero hour for uninitialized bid");
+    assert.equal(initial[2].toString(), 0, "non-zero amount for uninitialized bid");
+    assert.equal(initial[3].c, 0, "non-zero endTime for uninitialized bid");
+  });
+
+  it("should replace lower bids but not higher bids", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    const END_TIME = Date.now() + (24 * 60 * 60 * 1000);
+    const HOUR = 418453;
+
+    // Make an initial bid
+
+    const AMOUNT1 = web3.toWei(1, "ether");
+    let tx1 = await instance.makeBid(HOUR, END_TIME, {from: accounts[1], value: AMOUNT1});
+    let afterFirst = await instance.bids.call(HOUR);
+
+    // Make a higher bid
+
+    const AMOUNT2 = web3.toWei(5, "ether");
+    assert(AMOUNT2 > AMOUNT1);
+    let tx2 = await instance.makeBid(HOUR, END_TIME, {from: accounts[2], value: AMOUNT2});
+    let afterSecond = await instance.bids.call(HOUR);
+
+    assert.equal(afterSecond[0], accounts[2], "high bid address did not get recorded");
+    assert.equal(afterSecond[1].c, HOUR, "high bid hour is for the wrong hour");
+    assert.equal(afterSecond[2].toString(), AMOUNT2, "high bid is for the wrong amount");
+    assert.equal(afterSecond[3].c, END_TIME, "high bid has wrong end time");
+
+    // Make a lower bid
+
+    const AMOUNT3 = web3.toWei(3, "ether");
+    assert(AMOUNT3 > AMOUNT1);
+    assert(AMOUNT3 < AMOUNT2);
+
+    try {
+      let tx3 = await instance.makeBid(HOUR, END_TIME, {from: accounts[3], value: AMOUNT3});
+      console.dir(tx3);
+      assert.fail("Making a bid for a lower amount should throw an error.");
+    } catch (err) {
+    }
+    let afterThird = await instance.bids.call(HOUR);
+
+    assert.equal(afterThird[0], accounts[2], "high bid address did not get maintained");
+    assert.equal(afterThird[1].c, HOUR, "high bid hour not maintained");
+    assert.equal(afterThird[2].toString(), AMOUNT2, "high bid amount not maintained");
+    assert.equal(afterThird[3].c, END_TIME, "high bid end time not maintained");
   });
 });
