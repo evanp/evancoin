@@ -13,6 +13,7 @@ contract EvanCoin {
 
   mapping(uint => address) public owners;
   mapping(uint => Bid) public bids;
+  mapping(address => uint) public pending;
 
   function EvanCoin() {
     _evan = msg.sender;
@@ -35,5 +36,22 @@ contract EvanCoin {
     require(msg.sender != owner(hour));
     var bid = Bid(msg.sender, hour, msg.value, endTime);
     bids[hour] = bid;
+  }
+
+  function acceptBid(uint hour) public {
+    address current = owner(hour);
+    require(msg.sender == current);
+    Bid storage bid = bids[hour];
+    require(now < bid.endTime);
+    pending[current] += bid.amount;
+    owners[hour] = bid.bidder;
+    delete bids[hour];
+  }
+
+  function withdraw() public {
+    uint value = pending[msg.sender];
+    require(value > 0);
+    msg.sender.transfer(value);
+    delete pending[msg.sender];
   }
 }
