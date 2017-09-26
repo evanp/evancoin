@@ -187,4 +187,58 @@ contract('EvanCoin', function(accounts) {
     assert.equal(pending.toString(), AMOUNT1, `Bidder was not credited correctly for replaced bid (${pending} != ${AMOUNT1})`);
   });
 
+  it("should let the owner of an hour make an Ask for an amount", async () => {
+
+        let instance = await EvanCoin.deployed();
+        let HOUR = 418456;
+        let END_TIME = Date.now() + (24 * 60 * 60 * 1000);
+
+        let AMOUNT1 = web3.toWei(1, "ether");
+
+        let tx1 = await instance.makeAsk(HOUR, AMOUNT1, END_TIME, {from: accounts[0]});
+
+        let ask = await instance.asks.call(HOUR);
+
+        assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
+        assert.equal(ask[1].toString(), AMOUNT1, `Ask is not for the right amount`);
+        assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
+
+        let tx2 = await instance.acceptAsk(HOUR, {from: accounts[1], value: AMOUNT1});
+
+        let owner = await instance.owner.call(HOUR);
+
+        assert.equal(owner, accounts[1], `Owner is not changed`);
+
+        let pending = await instance.pending.call(accounts[0]);
+
+        assert.equal(pending.toString(), AMOUNT1, `Asker was not credited correctly for selling the hour`);
+
+        ask = await instance.asks.call(HOUR);
+
+        assert.equal(ask[0].c, 0, `Ask is not zero`);
+        assert.equal(ask[1].toString(), '0', `Ask is not zero`);
+        assert.equal(ask[2].c, 0, `Ask is not zeroed`);
+  });
+
+  it("should not let someone accept an ask that isn't available", async () => {
+
+      let instance = await EvanCoin.deployed();
+
+      let HOUR = 418457;
+
+      let AMOUNT1 = web3.toWei(1, "ether");
+
+      let ask = await instance.asks.call(HOUR);
+
+      assert.equal(ask[0].c, 0, `Ask is not zero`);
+      assert.equal(ask[1].toString(), '0', `Ask is not zero`);
+      assert.equal(ask[2].c, 0, `Ask is not zeroed`);
+
+      try {
+        let tx2 = await instance.acceptAsk(HOUR, {from: accounts[1], value: AMOUNT1});
+        assert.fail("Should not be able to accept an ask that doesn't exist");
+      } catch (err) {
+
+      }
+  });
 });

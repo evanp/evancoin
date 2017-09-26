@@ -11,8 +11,15 @@ contract EvanCoin {
       uint endTime;
   }
 
+  struct Ask {
+      uint hour;
+      uint amount;
+      uint endTime;
+  }
+
   mapping(uint => address) public owners;
   mapping(uint => Bid) public bids;
+  mapping(uint => Ask) public asks;
   mapping(address => uint) public pending;
 
   function EvanCoin() {
@@ -74,5 +81,23 @@ contract EvanCoin {
     require(value > 0);
     msg.sender.transfer(value);
     delete pending[msg.sender];
+  }
+
+  function makeAsk(uint hour, uint amount, uint endTime) public {
+    require(msg.sender == owner(hour));
+    require(amount > 0);
+    require(asks[hour].amount == 0 || amount < asks[hour].amount);
+    delete asks[hour];
+    asks[hour] = Ask(hour, amount, endTime);
+  }
+
+  function acceptAsk(uint hour) public payable {
+    require(msg.sender != owner(hour));
+    require(asks[hour].amount > 0);
+    require(asks[hour].endTime > now);
+    require(msg.value >= asks[hour].amount);
+    pending[owner(hour)] += msg.value;
+    delete asks[hour];
+    owners[hour] = msg.sender;
   }
 }
