@@ -98,5 +98,9 @@ contract EvanCoin {
     pending[owner(hour)] += msg.value;
     delete asks[hour];
     owners[hour] = msg.sender;
+    if (bids[hour].bidder != address(0)) {
+      pending[bids[hour].bidder] += bids[hour].amount;
+      delete bids[hour];
+    }
   }
 }
