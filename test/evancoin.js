@@ -241,4 +241,24 @@ contract('EvanCoin', function(accounts) {
 
       }
   });
+
+  it("should not let a non-owner make an ask", async () => {
+
+        let instance = await EvanCoin.deployed();
+        let HOUR = 418458;
+        let END_TIME = Date.now() + (24 * 60 * 60 * 1000);
+
+        let AMOUNT1 = web3.toWei(1, "ether");
+
+        let owner = await instance.owner.call(HOUR);
+
+        assert.notEqual(owner, accounts[5], `Owner is not expected`);
+
+        try {
+          let tx1 = await instance.makeAsk(HOUR, AMOUNT1, END_TIME, {from: accounts[5]});
+          assert.fail("Non-owner trying to make an ask");
+        } catch (err) {
+
+        }
+  });
 });
