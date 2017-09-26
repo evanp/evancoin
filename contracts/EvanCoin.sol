@@ -32,6 +32,11 @@ contract EvanCoin {
     }
   }
 
+  function transfer(uint hour, address to) public {
+    require(msg.sender == owner(hour));
+    owners[hour] = to;
+  }
+
   function makeBid(uint hour, uint endTime) public payable {
     require(msg.sender != owner(hour));
     require(msg.value > bids[hour].amount);

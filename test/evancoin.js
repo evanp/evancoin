@@ -124,4 +124,38 @@ contract('EvanCoin', function(accounts) {
     pending1 = await instance.pending.call(accounts[1]);
     assert.equal(pending1.toString(), AMOUNT1, `First account was not credited for replaced bid (${pending1} != ${AMOUNT1})`);
   });
+
+  it("should allow the owner to transfer an hour to another account", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    const HOUR = 418454;
+
+    // Transfer an hour one owns to another account
+
+    let tx = await instance.transfer(HOUR, accounts[1], {from: accounts[0]});
+    let newOwner = await instance.owner.call(HOUR);
+
+    assert.equal(newOwner, accounts[1], `New owner is not the one we transferred to (${newOwner} != ${accounts[1]})`);
+
+    // Transfer from one owner to another
+
+    tx = await instance.transfer(HOUR, accounts[2], {from: accounts[1]});
+    newOwner = await instance.owner.call(HOUR);
+
+    assert.equal(newOwner, accounts[2], `New owner is not the one we transferred to (${newOwner} != ${accounts[1]})`);
+
+    // Transfer unowned hour
+
+    try {
+      tx = await instance.transfer(HOUR, accounts[4], {from: accounts[3]});
+      assert.fail("Transferred unowned hour");
+    } catch (err) {
+      ;
+    }
+
+    newOwner = await instance.owner.call(HOUR);
+
+    assert.equal(newOwner, accounts[2], `Owner is not maintained`);
+  });
 });
