@@ -158,4 +158,33 @@ contract('EvanCoin', function(accounts) {
 
     assert.equal(newOwner, accounts[2], `Owner is not maintained`);
   });
+
+  it("should clear and refund bid if the owner transfers an hour to another account", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    const HOUR = 418455;
+    const END_TIME = Date.now() + (24 * 60 * 60 * 1000);
+
+    // Make an initial bid
+
+    const AMOUNT1 = web3.toWei(1, "ether");
+    let tx1 = await instance.makeBid(HOUR, END_TIME, {from: accounts[5], value: AMOUNT1});
+
+    // Transfer an hour one owns to another account
+
+    let tx = await instance.transfer(HOUR, accounts[2], {from: accounts[0]});
+
+    let afterTransfer = await instance.bids.call(HOUR);
+
+    assert.equal(afterTransfer[0], '0x0000000000000000000000000000000000000000', "bid was not cleared");
+    assert.equal(afterTransfer[1].c, 0, "bid was not cleared");
+    assert.equal(afterTransfer[2].toString(), 0, "bid was not cleared");
+    assert.equal(afterTransfer[3].c, 0, "bid was not cleared");
+
+    let pending = await instance.pending.call(accounts[5]);
+
+    assert.equal(pending.toString(), AMOUNT1, `Bidder was not credited correctly for replaced bid (${pending} != ${AMOUNT1})`);
+  });
+
 });

@@ -33,8 +33,19 @@ contract EvanCoin {
   }
 
   function transfer(uint hour, address to) public {
+
     require(msg.sender == owner(hour));
+
     owners[hour] = to;
+
+    // Refund bids
+
+    Bid memory prev = bids[hour];
+
+    if (prev.bidder != address(0)) {
+      pending[prev.bidder] += prev.amount;
+      delete bids[hour];
+    }
   }
 
   function makeBid(uint hour, uint endTime) public payable {
