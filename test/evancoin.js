@@ -51,7 +51,7 @@ contract('EvanCoin', function(accounts) {
     assert.equal(pending, 0, `First account pending was not cleared (${pending} != 0)`);
   });
 
-  it("initially bid for an hour is zeroes", async () => {
+  it("should return zeroes for the initial bid", async () => {
     let instance = await EvanCoin.deployed();
 
     const HOUR = 418452;
@@ -89,6 +89,11 @@ contract('EvanCoin', function(accounts) {
     assert.equal(afterSecond[2].toString(), AMOUNT2, "high bid is for the wrong amount");
     assert.equal(afterSecond[3].c, END_TIME, "high bid has wrong end time");
 
+    // Check that first bidder was refunded
+
+    let pending1 = await instance.pending.call(accounts[1]);
+    assert.equal(pending1.toString(), AMOUNT1, `First account was not credited for replaced bid (${pending1} != ${AMOUNT1})`);
+
     // Make a lower bid
 
     const AMOUNT3 = web3.toWei(3, "ether");
@@ -101,11 +106,22 @@ contract('EvanCoin', function(accounts) {
       assert.fail("Making a bid for a lower amount should throw an error.");
     } catch (err) {
     }
+
     let afterThird = await instance.bids.call(HOUR);
 
     assert.equal(afterThird[0], accounts[2], "high bid address did not get maintained");
     assert.equal(afterThird[1].c, HOUR, "high bid hour not maintained");
     assert.equal(afterThird[2].toString(), AMOUNT2, "high bid amount not maintained");
     assert.equal(afterThird[3].c, END_TIME, "high bid end time not maintained");
+
+    // Check that second bidder was not refunded
+
+    let pending2 = await instance.pending.call(accounts[2]);
+    assert.equal(pending2, 0, `Second account was incorrectly credited for replaced bid (${pending2} != 0)`);
+
+    // Check that first bidder was not double refunded
+
+    pending1 = await instance.pending.call(accounts[1]);
+    assert.equal(pending1.toString(), AMOUNT1, `First account was not credited for replaced bid (${pending1} != ${AMOUNT1})`);
   });
 });

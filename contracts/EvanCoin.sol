@@ -36,12 +36,11 @@ contract EvanCoin {
     require(msg.sender != owner(hour));
     require(msg.value > bids[hour].amount);
     var bid = Bid(msg.sender, hour, msg.value, endTime);
-    var prev = bids[hour];
-    bids[hour] = bid;
     // Refund the previous bidder
-    if (prev.bidder != address(0)) {
-      pending[prev.bidder] += prev.amount;
+    if (bids[hour].bidder != address(0)) {
+      pending[bids[hour].bidder] += bids[hour].amount;
     }
+    bids[hour] = bid;
   }
 
   function acceptBid(uint hour) public {
