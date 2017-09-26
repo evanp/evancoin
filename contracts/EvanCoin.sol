@@ -8,13 +8,11 @@ contract EvanCoin {
       address bidder;
       uint hour;
       uint amount;
-      uint endTime;
   }
 
   struct Ask {
       uint hour;
       uint amount;
-      uint endTime;
   }
 
   mapping(uint => address) public owners;
@@ -43,37 +41,53 @@ contract EvanCoin {
 
     require(msg.sender == owner(hour));
 
-    owners[hour] = to;
-
-    // Refund bids
-
-    Bid memory prev = bids[hour];
-
-    if (prev.bidder != address(0)) {
-      pending[prev.bidder] += prev.amount;
-      delete bids[hour];
-    }
-  }
-
-  function makeBid(uint hour, uint endTime) public payable {
-    require(msg.sender != owner(hour));
-    require(msg.value > bids[hour].amount);
-    var bid = Bid(msg.sender, hour, msg.value, endTime);
-    // Refund the previous bidder
     if (bids[hour].bidder != address(0)) {
       pending[bids[hour].bidder] += bids[hour].amount;
+      delete bids[hour];
     }
-    bids[hour] = bid;
+
+    owners[hour] = to;
   }
 
-  function acceptBid(uint hour) public {
-    address current = owner(hour);
-    require(msg.sender == current);
-    Bid storage bid = bids[hour];
-    require(now < bid.endTime);
-    pending[current] += bid.amount;
-    owners[hour] = bid.bidder;
-    delete bids[hour];
+  function bid(uint hour) public payable {
+
+    require(msg.sender != owner(hour));
+
+    require(msg.value > bids[hour].amount);
+
+    // Refund the previous bidder
+
+    if (bids[hour].bidder != address(0)) {
+      pending[bids[hour].bidder] += bids[hour].amount;
+      delete bids[hour];
+    }
+
+    // If there's an outstanding ask that's satisfied, close immediately.
+
+    if ((asks[hour].amount > 0) &&
+        (msg.value >= asks[hour].amount)) {
+
+      pending[owner(hour)] += msg.value;
+      delete asks[hour];
+      owners[hour] = msg.sender;
+
+    } else {
+      bids[hour] = Bid(msg.sender, hour, msg.value);
+    }
+
+  }
+
+  function ask(uint hour, uint amount) public {
+    require(msg.sender == owner(hour));
+    require(amount > 0);
+    if (bids[hour].amount >= amount) {
+      pending[owner(hour)] += bids[hour].amount;
+      owners[hour] = bids[hour].bidder;
+      delete bids[hour];
+    } else {
+      delete asks[hour];
+      asks[hour] = Ask(hour, amount);
+    }
   }
 
   function withdraw() public {
@@ -81,26 +95,5 @@ contract EvanCoin {
     require(value > 0);
     msg.sender.transfer(value);
     delete pending[msg.sender];
-  }
-
-  function makeAsk(uint hour, uint amount, uint endTime) public {
-    require(msg.sender == owner(hour));
-    require(amount > 0);
-    delete asks[hour];
-    asks[hour] = Ask(hour, amount, endTime);
-  }
-
-  function acceptAsk(uint hour) public payable {
-    require(msg.sender != owner(hour));
-    require(asks[hour].amount > 0);
-    require(asks[hour].endTime > now);
-    require(msg.value >= asks[hour].amount);
-    pending[owner(hour)] += msg.value;
-    delete asks[hour];
-    owners[hour] = msg.sender;
-    if (bids[hour].bidder != address(0)) {
-      pending[bids[hour].bidder] += bids[hour].amount;
-      delete bids[hour];
-    }
   }
 }
