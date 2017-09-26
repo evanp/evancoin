@@ -86,7 +86,6 @@ contract EvanCoin {
   function makeAsk(uint hour, uint amount, uint endTime) public {
     require(msg.sender == owner(hour));
     require(amount > 0);
-    require(asks[hour].amount == 0 || amount < asks[hour].amount);
     delete asks[hour];
     asks[hour] = Ask(hour, amount, endTime);
   }

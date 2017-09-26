@@ -261,4 +261,46 @@ contract('EvanCoin', function(accounts) {
 
         }
   });
+
+
+    it("should replace an ask with any amount", async () => {
+
+      let instance = await EvanCoin.deployed();
+      let HOUR = 418459;
+      let END_TIME = Date.now() + (24 * 60 * 60 * 1000);
+
+      let AMOUNT1 = web3.toWei(1, "ether");
+
+      let tx1 = await instance.makeAsk(HOUR, AMOUNT1, END_TIME, {from: accounts[0]});
+
+      let ask = await instance.asks.call(HOUR);
+
+      assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
+      assert.equal(ask[1].toString(), AMOUNT1, `Ask is not for the right amount`);
+      assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
+
+      let AMOUNT2 = web3.toWei(3, "ether");
+
+      assert(AMOUNT2 > AMOUNT1);
+
+      let tx2 = await instance.makeAsk(HOUR, AMOUNT2, END_TIME, {from: accounts[0]});
+
+      ask = await instance.asks.call(HOUR);
+
+      assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
+      assert.equal(ask[1].toString(), AMOUNT2, `Ask is not for the right amount`);
+      assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
+
+      let AMOUNT3 = web3.toWei(2, "ether");
+
+      assert(AMOUNT3 < AMOUNT2);
+
+      let tx3 = await instance.makeAsk(HOUR, AMOUNT3, END_TIME, {from: accounts[0]});
+
+      ask = await instance.asks.call(HOUR);
+
+      assert.equal(ask[0].c, HOUR, `Ask is not for the right hour`);
+      assert.equal(ask[1].toString(), AMOUNT3, `Ask is not for the right amount`);
+      assert.equal(ask[2].c, END_TIME, `Ask is not for the right end time`);
+    });
 });
