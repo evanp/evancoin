@@ -27,6 +27,7 @@ contract EvanCoin is StandardToken {
 
   Offer[] public offers;
   Bid[] public bids;
+  mapping(address => uint) public pending;
 
   function offerCount() public returns (uint) {
       return offers.length;
@@ -71,7 +72,31 @@ contract EvanCoin is StandardToken {
     require(msg.value > 0);
     // No rounding silliness pls
     require(msg.value % count == 0);
-    insertBid(msg.sender, count, msg.value/count);
+    uint rate = msg.value/count;
+    // Clear if there are any matching offers
+    for (uint i = 0; i < offers.length; i++) {
+      if (offers[i].rate <= rate) {
+        uint min = (offers[i].count < count) ? offers[i].count : count;
+        offers[i].count -= min;
+        count -= min;
+        balances[msg.sender] += min;
+        pending[offers[i].owner] += min * rate;
+        if (offers[i].count == 0) {
+          delete offers[i];
+          // shift up
+          for (uint j = i + 1; j < offers.length; j++) {
+            offers[j - i] = offers[j];
+          }
+          offers.length--;
+        }
+        if (count == 0) {
+          break;
+        }
+      }
+    }
+    if (count > 0) {
+      insertBid(msg.sender, count, rate);
+    }
   }
 
   function insertBid(address bidder, uint count, uint rate) internal {
