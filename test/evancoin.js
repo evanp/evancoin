@@ -27,9 +27,27 @@ contract('EvanCoin', function(accounts) {
 
     let instance = await EvanCoin.deployed();
 
-    let initial = await instance.balanceOf(accounts[0]);
+    let initial = await instance.balanceOf.call(accounts[0]);
 
     assert.equal(initial, 403236, "Wrong initial balance for first account");
+  });
+
+  it("should transfer EvanCoin between accounts", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    const AMOUNT = 100;
+
+    let initial0 = await instance.balanceOf(accounts[0]);
+    let initial1 = await instance.balanceOf(accounts[1]);
+
+    let tx1 = await instance.transfer(accounts[1], AMOUNT, {from: accounts[0]});
+
+    let final0 = await instance.balanceOf.call(accounts[0]);
+    let final1 = await instance.balanceOf.call(accounts[1]);
+
+    assert.equal(final0.minus(initial0).toNumber(), -1 * AMOUNT, "From account was not debited");
+    assert.equal(final1.minus(initial1).toNumber(), AMOUNT, "To account was not debited");
   });
 
   it("should let you offer EvanCoin for sale", async () => {
