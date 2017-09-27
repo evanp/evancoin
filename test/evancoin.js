@@ -58,11 +58,11 @@ contract('EvanCoin', function(accounts) {
 
     const COUNT = 100;
 
-    const RATE1 = web3.toWei(0.5, "ether");
-    const RATE2 = web3.toWei(1.0, "ether");
-    const RATE3 = web3.toWei(0.75, "ether");
-    const RATE4 = web3.toWei(0.25, "ether");
-    const RATE5 = web3.toWei(1.25, "ether");
+    const RATE1 = web3.toWei(50, "ether");
+    const RATE2 = web3.toWei(100, "ether");
+    const RATE3 = web3.toWei(75, "ether");
+    const RATE4 = web3.toWei(25, "ether");
+    const RATE5 = web3.toWei(125, "ether");
 
     let tx1 = await instance.transfer(accounts[1], COUNT, {from: accounts[0]});
     let tx2 = await instance.transfer(accounts[2], COUNT, {from: accounts[0]});
