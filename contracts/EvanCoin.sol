@@ -22,7 +22,7 @@ contract EvanCoin is StandardToken {
   struct Bid {
     address bidder;
     uint count;
-    uint value;
+    uint rate;
   }
 
   Offer[] public offers;
@@ -30,6 +30,10 @@ contract EvanCoin is StandardToken {
 
   function offerCount() public returns (uint) {
       return offers.length;
+  }
+
+  function bidCount() public returns (uint) {
+      return bids.length;
   }
 
   function offer(uint count, uint rate) public {
@@ -62,11 +66,42 @@ contract EvanCoin is StandardToken {
     }
   }
 
-  function bid(uint count) public payable returns (uint index) {
+  function bid(uint count) public payable {
     require(count > 0);
     require(msg.value > 0);
-    bids.length++;
-    bids[bids.length-1] = Bid(msg.sender, count, msg.value);
-    return bids.length;
+    // No rounding silliness pls
+    require(msg.value % count == 0);
+    insertBid(msg.sender, count, msg.value/count);
   }
+
+  function insertBid(address bidder, uint count, uint rate) internal {
+
+    require(bidder != address(0));
+    require(count > 0);
+    require(rate > 0);
+
+    var newBid = Bid(bidder, count, rate);
+
+    // extend the bids array by 1
+    bids.length++;
+    // look through sorted array for the first bid with a higher rate
+    for (uint i = 0; i < bids.length; i++) {
+      // if it has a strictly higher rate...
+      if (rate > bids[i].rate) {
+        // shift down
+        for (uint j = bids.length - 1; j > i; j--) {
+          bids[j] = bids[j - 1];
+        }
+        // insert here
+        bids[i] = newBid;
+        break;
+      }
+    }
+    // Finally, if we get to the end of the array and there is no
+    // end item, this must be the highest rate. Add at end.
+    if (bids[bids.length-1].bidder == address(0)) {
+      bids[bids.length-1] = newBid;
+    }
+  }
+
 }

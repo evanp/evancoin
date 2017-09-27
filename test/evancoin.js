@@ -58,6 +58,8 @@ contract('EvanCoin', function(accounts) {
 
     const COUNT = 100;
 
+    // High rates so they don't clear automatically
+
     const RATE1 = web3.toWei(50, "ether");
     const RATE2 = web3.toWei(100, "ether");
     const RATE3 = web3.toWei(75, "ether");
@@ -95,19 +97,44 @@ contract('EvanCoin', function(accounts) {
     assert.equal(offer4[0], accounts[5], "Wrong fifth offer");
   });
 
-  it("should let you bid on EvanCoin", async () => {
+  it("should insert bids in ascending order by rate", async () => {
 
     let instance = await EvanCoin.deployed();
 
-    const COUNT = 10;
-    const RATE = web3.toWei(0.25, "ether");
+    // Give five accounts some EvanCoin
 
-    let tx1 = await instance.bid(COUNT, {from: accounts[1], value: COUNT * RATE});
+    const COUNT = 100;
 
-    let bid = await instance.bids.call(0);
+    // Five very low rates (so they don't clear with above bids)
 
-    assert.equal(bid[0], accounts[1], "Wrong bid address");
-    assert.equal(bid[1].c, COUNT, "Wrong count");
-    assert.equal(bid[2].toString(), COUNT * RATE, "Wrong value");
+    const RATE1 = web3.toWei(0.05, "ether");
+    const RATE2 = web3.toWei(0.10, "ether");
+    const RATE3 = web3.toWei(0.075, "ether");
+    const RATE4 = web3.toWei(0.025, "ether");
+    const RATE5 = web3.toWei(0.125, "ether");
+
+    // Make bids in jaggy order
+
+    let tx1 = await instance.bid(COUNT, {from: accounts[5], value: COUNT * RATE1});
+    let tx2 = await instance.bid(COUNT, {from: accounts[6], value: COUNT * RATE2});
+    let tx3 = await instance.bid(COUNT, {from: accounts[7], value: COUNT * RATE3});
+    let tx4 = await instance.bid(COUNT, {from: accounts[8], value: COUNT * RATE4});
+    let tx5 = await instance.bid(COUNT, {from: accounts[9], value: COUNT * RATE5});
+
+    let count = await instance.bidCount.call();
+
+    assert.equal(count.toNumber(), 5, "Wrong number of bids");
+
+    let bid0 = await instance.bids.call(0);
+    let bid1 = await instance.bids.call(1);
+    let bid2 = await instance.bids.call(2);
+    let bid3 = await instance.bids.call(3);
+    let bid4 = await instance.bids.call(4);
+
+    assert.equal(bid0[0], accounts[9], "Wrong high bid");
+    assert.equal(bid1[0], accounts[6], "Wrong second bid");
+    assert.equal(bid2[0], accounts[7], "Wrong third bid");
+    assert.equal(bid3[0], accounts[5], "Wrong fourth bid");
+    assert.equal(bid4[0], accounts[8], "Wrong fifth bid");
   });
 });
