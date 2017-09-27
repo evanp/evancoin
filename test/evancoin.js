@@ -60,11 +60,11 @@ contract('EvanCoin', function(accounts) {
 
     // High rates so they don't clear automatically
 
-    const RATE1 = web3.toWei(50, "ether");
-    const RATE2 = web3.toWei(100, "ether");
-    const RATE3 = web3.toWei(75, "ether");
-    const RATE4 = web3.toWei(25, "ether");
-    const RATE5 = web3.toWei(125, "ether");
+    const RATE1 = web3.toWei(0.0050, "ether");
+    const RATE2 = web3.toWei(0.0100, "ether");
+    const RATE3 = web3.toWei(0.0075, "ether");
+    const RATE4 = web3.toWei(0.0025, "ether");
+    const RATE5 = web3.toWei(0.0125, "ether");
 
     let tx1 = await instance.transfer(accounts[1], COUNT, {from: accounts[0]});
     let tx2 = await instance.transfer(accounts[2], COUNT, {from: accounts[0]});
@@ -107,11 +107,11 @@ contract('EvanCoin', function(accounts) {
 
     // Five very low rates (so they don't clear with above bids)
 
-    const RATE1 = web3.toWei(0.05, "ether");
-    const RATE2 = web3.toWei(0.10, "ether");
-    const RATE3 = web3.toWei(0.075, "ether");
-    const RATE4 = web3.toWei(0.025, "ether");
-    const RATE5 = web3.toWei(0.125, "ether");
+    const RATE1 = web3.toWei(0.0000050, "ether");
+    const RATE2 = web3.toWei(0.0000100, "ether");
+    const RATE3 = web3.toWei(0.0000075, "ether");
+    const RATE4 = web3.toWei(0.0000025, "ether");
+    const RATE5 = web3.toWei(0.0000125, "ether");
 
     // Make bids in jaggy order
 
@@ -148,7 +148,7 @@ contract('EvanCoin', function(accounts) {
 
     // Five very low rates (so they don't clear with above bids)
 
-    const RATE = web3.toWei(1, "ether");
+    const RATE = web3.toWei(0.0001, "ether");
 
     let tx1 = await instance.transfer(accounts[1], COUNT, {from: accounts[0]});
 
