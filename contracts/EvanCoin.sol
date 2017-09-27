@@ -1,7 +1,7 @@
 pragma solidity ^0.4.4;
-import 'zeppelin-solidity/contracts/token/MintableToken.sol';
+import 'zeppelin-solidity/contracts/token/StandardToken.sol';
 
-contract EvanCoin is MintableToken {
+contract EvanCoin is StandardToken {
 
   string public name = 'EvanCoin';
   string public symbol = 'fn';
