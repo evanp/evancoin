@@ -27,14 +27,39 @@ contract EvanCoin is StandardToken {
 
   Offer[] public offers;
   Bid[] public bids;
-  
-  function offer(uint count, uint rate) public returns (uint index) {
+
+  function offerCount() public returns (uint) {
+      return offers.length;
+  }
+
+  function offer(uint count, uint rate) public {
     require(balanceOf(msg.sender) >= count);
     require(rate > 0);
+    insertOffer(msg.sender, count, rate);
+  }
+
+  function insertOffer(address owner, uint count, uint rate) internal {
+    var newOffer = Offer(owner, count, rate);
+    // extend the offers array by 1
     offers.length++;
-    offers[offers.length-1] = Offer(msg.sender, count, rate);
-    balances[msg.sender] -= count;
-    return offers.length;
+    // look through sorted array for the first offer with a higher rate
+    for (uint i = 0; i < offers.length; i++) {
+      // if it has a strictly higher rate...
+      if (rate < offers[i].rate) {
+        // shift down
+        for (uint j = offers.length - 1; j > i; j--) {
+          offers[j] = offers[j - 1];
+        }
+        // insert here
+        offers[i] = newOffer;
+        break;
+      }
+    }
+    // Finally, if we get to the end of the array and there is no
+    // end item, this must be the highest rate. Add at end.
+    if (offers[offers.length-1].owner == address(0)) {
+      offers[offers.length-1] = newOffer;
+    }
   }
 
   function bid(uint count) public payable returns (uint index) {

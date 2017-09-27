@@ -2,7 +2,7 @@
 
 require('babel-core/register');
 
-var EvanCoin = artifacts.require("EvanCoin");
+let EvanCoin = artifacts.require("EvanCoin");
 
 contract('EvanCoin', function(accounts) {
 
@@ -50,31 +50,54 @@ contract('EvanCoin', function(accounts) {
     assert.equal(final1.minus(initial1).toNumber(), AMOUNT, "To account was not debited");
   });
 
-  it("should let you offer EvanCoin for sale", async () => {
+  it("should insert offers in descending order by rate", async () => {
 
-    var instance = await EvanCoin.deployed();
+    let instance = await EvanCoin.deployed();
 
-    const COUNT = 10;
-    const RATE = web3.toWei(0.5, "ether");
+    // Give five accounts some EvanCoin
 
-    let initial = await instance.balanceOf(accounts[0]);
+    const COUNT = 100;
 
-    let tx1 = await instance.offer(COUNT, RATE, {from: accounts[0]});
+    const RATE1 = web3.toWei(0.5, "ether");
+    const RATE2 = web3.toWei(1.0, "ether");
+    const RATE3 = web3.toWei(0.75, "ether");
+    const RATE4 = web3.toWei(0.25, "ether");
+    const RATE5 = web3.toWei(1.25, "ether");
 
-    let offer = await instance.offers.call(0);
+    let tx1 = await instance.transfer(accounts[1], COUNT, {from: accounts[0]});
+    let tx2 = await instance.transfer(accounts[2], COUNT, {from: accounts[0]});
+    let tx3 = await instance.transfer(accounts[3], COUNT, {from: accounts[0]});
+    let tx4 = await instance.transfer(accounts[4], COUNT, {from: accounts[0]});
+    let tx5 = await instance.transfer(accounts[5], COUNT, {from: accounts[0]});
 
-    assert.equal(offer[0], accounts[0], "Wrong offer address");
-    assert.equal(offer[1].c, COUNT, "Wrong count");
-    assert.equal(offer[2].toString(), RATE, "Wrong rate");
+    // Make offers in jaggy order
 
-    let final = await instance.balanceOf.call(accounts[0]);
+    let tx6 = await instance.offer(COUNT, RATE1, {from: accounts[1]});
+    let tx7 = await instance.offer(COUNT, RATE2, {from: accounts[2]});
+    let tx8 = await instance.offer(COUNT, RATE3, {from: accounts[3]});
+    let tx9 = await instance.offer(COUNT, RATE4, {from: accounts[4]});
+    let tx10 = await instance.offer(COUNT, RATE5, {from: accounts[5]});
 
-    assert.equal(initial.minus(final).toNumber(), COUNT, "Account not debited");
+    let count = await instance.offerCount.call();
+
+    assert.equal(count.toNumber(), 5, "Wrong number of offers");
+
+    let offer0 = await instance.offers.call(0);
+    let offer1 = await instance.offers.call(1);
+    let offer2 = await instance.offers.call(2);
+    let offer3 = await instance.offers.call(3);
+    let offer4 = await instance.offers.call(4);
+
+    assert.equal(offer0[0], accounts[4], "Wrong low offer");
+    assert.equal(offer1[0], accounts[1], "Wrong second offer");
+    assert.equal(offer2[0], accounts[3], "Wrong third offer");
+    assert.equal(offer3[0], accounts[2], "Wrong fourth offer");
+    assert.equal(offer4[0], accounts[5], "Wrong fifth offer");
   });
 
   it("should let you bid on EvanCoin", async () => {
 
-    var instance = await EvanCoin.deployed();
+    let instance = await EvanCoin.deployed();
 
     const COUNT = 10;
     const RATE = web3.toWei(0.25, "ether");
