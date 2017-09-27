@@ -12,4 +12,21 @@ contract EvanCoin is StandardToken {
     totalSupply = INITIAL_SUPPLY;
     balances[msg.sender] = INITIAL_SUPPLY;
   }
+
+  struct Offer {
+    address owner;
+    uint count;
+    uint rate;
+  }
+
+  Offer[] public offers;
+
+  function offer(uint count, uint rate) returns (uint index) {
+    require(balanceOf(msg.sender) >= count);
+    require(rate > 0);
+    offers.length++;
+    offers[offers.length-1] = Offer(msg.sender, count, rate);
+    balances[msg.sender] -= count;
+    return offers.length;
+  }
 }
