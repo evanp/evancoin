@@ -61,11 +61,11 @@ contract('EvanCoin', function(accounts) {
 
     let tx1 = await instance.offer(COUNT, RATE, {from: accounts[0]});
 
-    let ask = await instance.offers.call(0);
+    let offer = await instance.offers.call(0);
 
-    assert.equal(ask[0], accounts[0], "Wrong ask address");
-    assert.equal(ask[1].c, COUNT, "Wrong count");
-    assert.equal(ask[2].toString(), RATE, "Wrong rate");
+    assert.equal(offer[0], accounts[0], "Wrong offer address");
+    assert.equal(offer[1].c, COUNT, "Wrong count");
+    assert.equal(offer[2].toString(), RATE, "Wrong rate");
 
     let final = await instance.balanceOf.call(accounts[0]);
 
