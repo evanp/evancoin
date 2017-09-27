@@ -53,4 +53,20 @@ contract('EvanCoin', function(accounts) {
 
     assert.equal(initial.minus(final).toNumber(), COUNT, "Account not debited");
   });
+
+  it("should let you bid on EvanCoin", async () => {
+
+    var instance = await EvanCoin.deployed();
+
+    const COUNT = 10;
+    const RATE = web3.toWei(0.25, "ether");
+
+    let tx1 = await instance.bid(COUNT, {from: accounts[1], value: COUNT * RATE});
+
+    let bid = await instance.bids.call(0);
+
+    assert.equal(bid[0], accounts[1], "Wrong bid address");
+    assert.equal(bid[1].c, COUNT, "Wrong count");
+    assert.equal(bid[2].toString(), COUNT * RATE, "Wrong value");
+  });
 });

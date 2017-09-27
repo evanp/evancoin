@@ -19,14 +19,29 @@ contract EvanCoin is StandardToken {
     uint rate;
   }
 
-  Offer[] public offers;
+  struct Bid {
+    address bidder;
+    uint count;
+    uint value;
+  }
 
-  function offer(uint count, uint rate) returns (uint index) {
+  Offer[] public offers;
+  Bid[] public bids;
+  
+  function offer(uint count, uint rate) public returns (uint index) {
     require(balanceOf(msg.sender) >= count);
     require(rate > 0);
     offers.length++;
     offers[offers.length-1] = Offer(msg.sender, count, rate);
     balances[msg.sender] -= count;
     return offers.length;
+  }
+
+  function bid(uint count) public payable returns (uint index) {
+    require(count > 0);
+    require(msg.value > 0);
+    bids.length++;
+    bids[bids.length-1] = Bid(msg.sender, count, msg.value);
+    return bids.length;
   }
 }
