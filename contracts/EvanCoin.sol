@@ -74,24 +74,19 @@ contract EvanCoin is StandardToken {
     require(msg.value % count == 0);
     uint rate = msg.value/count;
     // Clear if there are any matching offers
-    for (uint i = 0; i < offers.length; i++) {
-      if (offers[i].rate <= rate) {
-        uint min = (offers[i].count < count) ? offers[i].count : count;
-        offers[i].count -= min;
-        count -= min;
-        balances[msg.sender] += min;
-        pending[offers[i].owner] += min * rate;
-        if (offers[i].count == 0) {
-          delete offers[i];
-          // shift up
-          for (uint j = i + 1; j < offers.length; j++) {
-            offers[j - i] = offers[j];
-          }
-          offers.length--;
+    while (count > 0 && offers.length > 0 && offers[0].rate <= rate) {
+      uint min = (offers[0].count < count) ? offers[0].count : count;
+      offers[0].count -= min;
+      count -= min;
+      balances[msg.sender] += min;
+      pending[offers[0].owner] += min * rate;
+      if (offers[0].count == 0) {
+        delete offers[0];
+        // shift up
+        for (uint j = 1; j < offers.length; j++) {
+          offers[j - 1] = offers[j];
         }
-        if (count == 0) {
-          break;
-        }
+        offers.length--;
       }
     }
     if (count > 0) {
