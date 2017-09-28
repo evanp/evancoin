@@ -203,4 +203,42 @@ contract('EvanCoin', function(accounts) {
     assert.equal(pending1.minus(pending0).toNumber(), COUNT * HIGH, "Wrong pending value");
   });
 
+  it("should clear bids immediately if there is are multiple offers with same or lower rate", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    // Give an accounts some EvanCoin
+
+    const COUNT = 10;
+
+    // Middlish rates
+
+    const LOW = web3.toWei(0.00005, "ether");
+    const HIGH = web3.toWei(0.00015, "ether");
+
+    let tx1 = await instance.transfer(accounts[1], COUNT, {from: accounts[0]});
+    let tx2 = await instance.transfer(accounts[2], COUNT, {from: accounts[0]});
+
+    // Make offer
+
+    let tx3 = await instance.offer(COUNT/2, LOW, {from: accounts[1]});
+    let tx4 = await instance.offer(COUNT/2, HIGH, {from: accounts[2]});
+
+    let balance0 = await instance.balanceOf.call(accounts[3]);
+    let pending10 = await instance.pending.call(accounts[1]);
+    let pending20 = await instance.pending.call(accounts[2]);
+
+    // Make bid at higher rate and count
+
+    let tx5 = await instance.bid(COUNT, {from: accounts[3], value: COUNT * HIGH});
+
+    let balance1 = await instance.balanceOf.call(accounts[3]);
+    let pending11 = await instance.pending.call(accounts[1]);
+    let pending21 = await instance.pending.call(accounts[2]);
+
+    assert.equal(balance1.minus(balance0).toNumber(), COUNT, "Wrong value");
+    assert.equal(pending11.minus(pending10).toNumber(), COUNT/2 * HIGH, "Wrong pending value");
+    assert.equal(pending21.minus(pending20).toNumber(), COUNT/2 * HIGH, "Wrong pending value");
+  });
+
 });
