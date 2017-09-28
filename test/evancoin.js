@@ -251,7 +251,7 @@ contract('EvanCoin', function(accounts) {
 
     // Middlish rates
 
-    const RATE = web3.toWei(0.00005, "ether");
+    const RATE = web3.toWei(0.00007, "ether");
 
     let tx1 = await instance.transfer(accounts[1], COUNT * 2, {from: accounts[0]});
 
@@ -288,7 +288,7 @@ contract('EvanCoin', function(accounts) {
 
     // Lower rate that in previous test, since it has some left over
 
-    const RATE = web3.toWei(0.00004, "ether");
+    const RATE = web3.toWei(0.00003, "ether");
 
     let tx1 = await instance.transfer(accounts[1], COUNT / 2, {from: accounts[0]});
 
@@ -315,4 +315,231 @@ contract('EvanCoin', function(accounts) {
     assert.equal(bid0[2].c, RATE, "Wrong highest bid rate");
   });
 
+  it("should clear offers immediately if there is a bid with an equal rate", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    // Give an accounts some EvanCoin
+
+    const COUNT = 10;
+
+    // Rate between above tests so it doesn't clear immediately
+
+    const RATE = web3.toWei(0.00004, "ether");
+
+    let tx1 = await instance.transfer(accounts[3], COUNT, {from: accounts[0]});
+
+    // Make bid
+
+    let bidCount0 = await instance.bidCount.call();
+
+    let tx2 = await instance.bid(COUNT, {from: accounts[4], value: COUNT * RATE});
+
+    let bidCount1 = await instance.bidCount.call();
+    let bid0 = await instance.bids.call(0);
+
+    assert.equal(bidCount1.minus(bidCount0).toNumber(), 1, "Did not save a new bid");
+    assert.equal(bid0[1].c, COUNT, "Wrong highest bid count");
+    assert.equal(bid0[2].c, RATE, "Wrong highest bid rate");
+    assert.equal(bid0[0], accounts[4], "Wrong highest bid address");
+
+    // Make offer
+
+    let balance0 = await instance.balanceOf.call(accounts[4]);
+    let pending0 = await instance.pending.call(accounts[3]);
+
+    // Make offer
+
+    let tx3 = await instance.offer(COUNT, RATE, {from: accounts[3]});
+
+    let balance1 = await instance.balanceOf.call(accounts[4]);
+    let pending1 = await instance.pending.call(accounts[3]);
+
+    assert.equal(balance1.minus(balance0).toNumber(), COUNT, "Wrong new balance");
+    assert.equal(pending1.minus(pending0).toNumber(), COUNT * RATE, "Wrong new pending value");
+  });
+
+  it("should clear offers immediately if there is a bid with a higher rate", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    // Give an accounts some EvanCoin
+
+    const COUNT = 10;
+
+    // Rate between above tests so it doesn't clear immediately
+
+    const HIGH = web3.toWei(0.000045, "ether");
+    const LOW = web3.toWei(0.000035, "ether");
+
+    let tx1 = await instance.transfer(accounts[3], COUNT, {from: accounts[0]});
+
+    // Make bid
+
+    let bidCount0 = await instance.bidCount.call();
+
+    let tx2 = await instance.bid(COUNT, {from: accounts[4], value: COUNT * HIGH});
+
+    let bidCount1 = await instance.bidCount.call();
+    let bid0 = await instance.bids.call(0);
+
+    assert.equal(bidCount1.minus(bidCount0).toNumber(), 1, "Did not save a new bid");
+    assert.equal(bid0[1].c, COUNT, "Wrong highest bid count");
+    assert.equal(bid0[2].c, HIGH, "Wrong highest bid rate");
+    assert.equal(bid0[0], accounts[4], "Wrong highest bid address");
+
+    // Make offer
+
+    let balance0 = await instance.balanceOf.call(accounts[4]);
+    let pending30 = await instance.pending.call(accounts[3]);
+    let pending40 = await instance.pending.call(accounts[4]);
+
+    // Make offer
+
+    let tx3 = await instance.offer(COUNT, LOW, {from: accounts[3]});
+
+    let balance1 = await instance.balanceOf.call(accounts[4]);
+    let pending31 = await instance.pending.call(accounts[3]);
+    let pending41 = await instance.pending.call(accounts[4]);
+
+    assert.equal(balance1.minus(balance0).toNumber(), COUNT, "Wrong new balance");
+    assert.equal(pending31.minus(pending30).toNumber(), COUNT * LOW, "Wrong new pending value");
+    assert.equal(pending41.minus(pending40).toNumber(), COUNT * (HIGH - LOW), "Wrong refund value");
+  });
+
+  it("should clear offers immediately if there are multiple bids at an equal rate", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    // Give an accounts some EvanCoin
+
+    const COUNT = 30;
+
+    const RATE = web3.toWei(0.00005, "ether");
+
+    let tx1 = await instance.transfer(accounts[9], COUNT, {from: accounts[0]});
+
+    // Make bid
+
+    let bidCount0 = await instance.bidCount.call();
+
+    let tx2 = await instance.bid(COUNT/3, {from: accounts[6], value: (COUNT/3) * RATE});
+    let tx3 = await instance.bid(COUNT/3, {from: accounts[7], value: (COUNT/3) * RATE});
+    let tx4 = await instance.bid(COUNT/3, {from: accounts[8], value: (COUNT/3) * RATE});
+
+    let bidCount1 = await instance.bidCount.call();
+
+    assert.equal(bidCount1.minus(bidCount0).toNumber(), 3, "Did not save new bids");
+
+    // Make offer
+
+    let balance60 = await instance.balanceOf.call(accounts[6]);
+    let balance70 = await instance.balanceOf.call(accounts[7]);
+    let balance80 = await instance.balanceOf.call(accounts[8]);
+    let pending90 = await instance.pending.call(accounts[9]);
+
+    let tx5 = await instance.offer(COUNT, RATE, {from: accounts[9]});
+
+    let balance61 = await instance.balanceOf.call(accounts[6]);
+    let balance71 = await instance.balanceOf.call(accounts[7]);
+    let balance81 = await instance.balanceOf.call(accounts[8]);
+    let pending91 = await instance.pending.call(accounts[9]);
+
+    assert.equal(balance61.minus(balance60).toNumber(), COUNT/3, "Wrong new balance for accounts[6]");
+    assert.equal(balance71.minus(balance70).toNumber(), COUNT/3, "Wrong new balance for accounts[7]");
+    assert.equal(balance81.minus(balance80).toNumber(), COUNT/3, "Wrong new balance for accounts[8]");
+    assert.equal(pending91.minus(pending90).toNumber(), COUNT * RATE, "Wrong new pending value for accounts[9]");
+  });
+
+  it("should clear offers immediately if there is a bid with an equal rate and higher count", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    // Give an accounts some EvanCoin
+
+    const COUNT = 10;
+
+    // Rate between above tests so it doesn't clear immediately
+
+    const RATE = web3.toWei(0.00004, "ether");
+
+    let tx1 = await instance.transfer(accounts[3], COUNT, {from: accounts[0]});
+
+    // Make bid
+
+    let bidCount0 = await instance.bidCount.call();
+
+    let tx2 = await instance.bid(COUNT * 3, {from: accounts[4], value: COUNT * 3 * RATE});
+
+    let bidCount1 = await instance.bidCount.call();
+
+    assert.equal(bidCount1.minus(bidCount0).toNumber(), 1, "Did not save a new bid");
+
+    // Make offer
+
+    let balance0 = await instance.balanceOf.call(accounts[4]);
+    let pending0 = await instance.pending.call(accounts[3]);
+
+    // Make offer
+
+    let tx3 = await instance.offer(COUNT, RATE, {from: accounts[3]});
+
+    let balance1 = await instance.balanceOf.call(accounts[4]);
+    let pending1 = await instance.pending.call(accounts[3]);
+    let bid0 = await instance.bids.call(0);
+
+    assert.equal(balance1.minus(balance0).toNumber(), COUNT, "Wrong new balance");
+    assert.equal(pending1.minus(pending0).toNumber(), COUNT * RATE, "Wrong new pending value");
+
+    assert.equal(bid0[0], accounts[4], "Wrong highest bid address");
+    assert.equal(bid0[1].c, COUNT * 2, "Wrong highest bid remaining count");
+    assert.equal(bid0[2].c, RATE, "Wrong highest bid rate");
+  });
+
+  it("should clear offers partially if there is a bid with an equal rate and lower count", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    // Give an accounts some EvanCoin
+
+    const COUNT = 10;
+
+    // Rate between above tests so it doesn't clear immediately
+
+    const RATE = web3.toWei(0.00006, "ether");
+
+    let tx1 = await instance.transfer(accounts[3], COUNT, {from: accounts[0]});
+
+    // Make bid
+
+    let bidCount0 = await instance.bidCount.call();
+
+    let tx2 = await instance.bid(COUNT/2, {from: accounts[4], value: (COUNT/2) * RATE});
+
+    let bidCount1 = await instance.bidCount.call();
+
+    assert.equal(bidCount1.minus(bidCount0).toNumber(), 1, "Did not save a new bid");
+
+    // Make offer
+
+    let offerCount0 = await instance.offerCount.call();
+    let balance0 = await instance.balanceOf.call(accounts[4]);
+    let pending0 = await instance.pending.call(accounts[3]);
+
+    // Make offer
+
+    let tx3 = await instance.offer(COUNT, RATE, {from: accounts[3]});
+
+    let offerCount1 = await instance.offerCount.call();
+    let balance1 = await instance.balanceOf.call(accounts[4]);
+    let pending1 = await instance.pending.call(accounts[3]);
+    let offer0 = await instance.offers.call(0);
+
+    assert.equal(balance1.minus(balance0).toNumber(), COUNT/2, "Wrong new balance");
+    assert.equal(pending1.minus(pending0).toNumber(), (COUNT/2) * RATE, "Wrong new pending value");
+    assert.equal(offerCount1.minus(offerCount0).toNumber(), 1, "Did not add a new offer");
+    assert.equal(offer0[0], accounts[3], "Wrong lowest offer address");
+    assert.equal(offer0[1].c, COUNT/2, "Wrong lowest offer remaining count");
+    assert.equal(offer0[2].c, RATE, "Wrong lowest offer rate");
+  });
 });

@@ -3,6 +3,10 @@ import 'zeppelin-solidity/contracts/token/StandardToken.sol';
 
 contract EvanCoin is StandardToken {
 
+  event Transaction(address indexed from, address indexed to, uint256 count, uint256 rate);
+  event OpenBid(address indexed bidder, uint256 count, uint256 rate);
+  event OpenOffer(address indexed owner, uint256 count, uint256 rate);
+
   string public name = 'EvanCoin';
   string public symbol = 'fn';
   uint public decimals = 2;
@@ -40,7 +44,34 @@ contract EvanCoin is StandardToken {
   function offer(uint count, uint rate) public {
     require(balanceOf(msg.sender) >= count);
     require(rate > 0);
-    insertOffer(msg.sender, count, rate);
+    // Clear if there are any matching bids
+    // High bid is always on top
+    while (count > 0 && bids.length > 0 && bids[0].rate >= rate) {
+      uint min = (bids[0].count < count) ? bids[0].count : count;
+      assert(bids[0].count >= min);
+      assert(count >= min);
+      bids[0].count -= min;
+      count -= min;
+      balances[bids[0].bidder] += min;
+      pending[msg.sender] += min * rate;
+      Transaction(msg.sender, bids[0].bidder, min, rate);
+      if (bids[0].rate > rate) {
+        pending[bids[0].bidder] += min * (bids[0].rate - rate);
+      }
+      if (bids[0].count == 0) {
+        delete bids[0];
+        // shift up
+        for (uint j = 1; j < bids.length; j++) {
+          bids[j - 1] = bids[j];
+        }
+        // shorten
+        bids.length--;
+      }
+    }
+    // Insert a new offer if there are still some left after clearing bids
+    if (count > 0) {
+      insertOffer(msg.sender, count, rate);
+    }
   }
 
   function insertOffer(address owner, uint count, uint rate) internal {
@@ -65,6 +96,7 @@ contract EvanCoin is StandardToken {
     if (offers[offers.length-1].owner == address(0)) {
       offers[offers.length-1] = newOffer;
     }
+    OpenOffer(owner, count, rate);
   }
 
   function bid(uint count) public payable {
@@ -80,6 +112,7 @@ contract EvanCoin is StandardToken {
       count -= min;
       balances[msg.sender] += min;
       pending[offers[0].owner] += min * rate;
+      Transaction(offers[0].owner, msg.sender, min, rate);
       if (offers[0].count == 0) {
         delete offers[0];
         // shift up
@@ -122,6 +155,6 @@ contract EvanCoin is StandardToken {
     if (bids[bids.length-1].bidder == address(0)) {
       bids[bids.length-1] = newBid;
     }
+    OpenBid(bidder, count, rate);
   }
-
 }
