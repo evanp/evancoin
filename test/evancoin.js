@@ -542,4 +542,33 @@ contract('EvanCoin', function(accounts) {
     assert.equal(offer0[1].c, COUNT/2, "Wrong lowest offer remaining count");
     assert.equal(offer0[2].c, RATE, "Wrong lowest offer rate");
   });
+
+  it("should let you withdraw funds from sales or refunds", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    let pending0 = await instance.pending.call(accounts[3]);
+
+    assert.ok(pending0.toNumber() > 0, `No funds to withdraw`);
+
+    let balance0 = web3.eth.getBalance(accounts[3]);
+
+    let tx1 = await instance.withdraw({from: accounts[3]});
+
+    let pending1 = await instance.pending.call(accounts[3]);
+
+    let wdtx = web3.eth.getTransaction(tx1.tx);
+    let gc = tx1.receipt.gasUsed * wdtx.gasPrice;
+    let balance1 = web3.eth.getBalance(accounts[3]);
+
+    let difference = balance1.minus(balance0).toNumber();
+
+    let expected = pending0.toNumber() - gc;
+
+    assert.equal(difference, expected, `final (${balance1}) minus initial (${balance0}) not equal to pending ${pending0.toNumber()} minus gc ${gc}`);
+
+    assert.equal(pending1.toNumber(), 0, "Funds left in pending after withdrawal");
+
+  });
+
 });

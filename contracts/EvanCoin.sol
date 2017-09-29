@@ -6,7 +6,8 @@ contract EvanCoin is StandardToken {
   event Transaction(address indexed from, address indexed to, uint256 count, uint256 rate);
   event OpenBid(address indexed bidder, uint256 count, uint256 rate);
   event OpenOffer(address indexed owner, uint256 count, uint256 rate);
-
+  event Withdrawal(address indexed owner, uint256 value);
+  
   string public name = 'EvanCoin';
   string public symbol = 'fn';
   uint public decimals = 2;
@@ -156,5 +157,14 @@ contract EvanCoin is StandardToken {
       bids[bids.length-1] = newBid;
     }
     OpenBid(bidder, count, rate);
+  }
+
+  function withdraw() public {
+    require(pending[msg.sender] > 0);
+    msg.sender.transfer(pending[msg.sender]);
+    uint value = pending[msg.sender];
+    delete pending[msg.sender];
+    assert(pending[msg.sender] == 0);
+    Withdrawal(msg.sender, value);
   }
 }
