@@ -6,7 +6,7 @@ contract EvanCoin is StandardToken {
   string public name = 'EvanCoin';
   string public symbol = 'fn';
   uint public decimals = 2;
-  uint public INITIAL_SUPPLY = 403236;
+  uint public INITIAL_SUPPLY = 40323600;
 
   function EvanCoin() {
     totalSupply = INITIAL_SUPPLY;

@@ -19,8 +19,8 @@ contract('EvanCoin', function(accounts) {
     assert.equal(name, "EvanCoin", "Wrong name");
     assert.equal(symbol, "fn", "Wrong symbol");
     assert.equal(decimals, "2", "Wrong decimals");
-    assert.equal(INITIAL_SUPPLY, 403236, "Wrong initial supply");
-    assert.equal(totalSupply, 403236, "Wrong total supply");
+    assert.equal(INITIAL_SUPPLY, 40323600, "Wrong initial supply");
+    assert.equal(totalSupply, 40323600, "Wrong total supply");
   });
 
   it("should have the right initial balance", async () => {
@@ -29,7 +29,7 @@ contract('EvanCoin', function(accounts) {
 
     let initial = await instance.balanceOf.call(accounts[0]);
 
-    assert.equal(initial, 403236, "Wrong initial balance for first account");
+    assert.equal(initial, 40323600, "Wrong initial balance for first account");
   });
 
   it("should transfer EvanCoin between accounts", async () => {
