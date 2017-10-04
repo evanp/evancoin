@@ -4,7 +4,7 @@ import 'zeppelin-solidity/contracts/token/StandardToken.sol';
 contract EvanCoin is StandardToken {
 
   string public name = 'EvanCoin';
-  string public symbol = 'fn';
+  string public symbol = 'EVAN';
   uint public decimals = 2;
   uint public INITIAL_SUPPLY = 40323600;
 

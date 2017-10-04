@@ -17,7 +17,7 @@ contract('EvanCoin', function(accounts) {
     let totalSupply = await instance.totalSupply.call();
 
     assert.equal(name, "EvanCoin", "Wrong name");
-    assert.equal(symbol, "fn", "Wrong symbol");
+    assert.equal(symbol, "EVAN", "Wrong symbol");
     assert.equal(decimals, "2", "Wrong decimals");
     assert.equal(INITIAL_SUPPLY, 40323600, "Wrong initial supply");
     assert.equal(totalSupply, 40323600, "Wrong total supply");
