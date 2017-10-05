@@ -49,4 +49,22 @@ contract('EvanCoin', function(accounts) {
     assert.equal(final0.minus(initial0).toNumber(), -1 * AMOUNT, "From account was not debited");
     assert.equal(final1.minus(initial1).toNumber(), AMOUNT, "To account was not debited");
   });
+
+  it("should let an account burn EvanCoin", async () => {
+
+    let instance = await EvanCoin.deployed();
+
+    const AMOUNT = 100;
+
+    let initial0 = await instance.balanceOf(accounts[0]);
+    let totalSupply0 = await instance.totalSupply.call();
+
+    let tx1 = await instance.burn(AMOUNT, {from: accounts[0]});
+
+    let final0 = await instance.balanceOf.call(accounts[0]);
+    let totalSupply1 = await instance.totalSupply.call();
+
+    assert.equal(final0.minus(initial0).toNumber(), -1 * AMOUNT, "From account was not debited");
+    assert.equal(totalSupply1.minus(totalSupply0).toNumber(), -1 * AMOUNT, "Total supply was not decremented");
+  });
 });

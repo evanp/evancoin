@@ -1,7 +1,7 @@
 pragma solidity ^0.4.4;
-import 'zeppelin-solidity/contracts/token/StandardToken.sol';
+import 'zeppelin-solidity/contracts/token/BurnableToken.sol';
 
-contract EvanCoin is StandardToken {
+contract EvanCoin is BurnableToken {
 
   string public name = 'EvanCoin';
   string public symbol = 'EVAN';
