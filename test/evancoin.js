@@ -4,6 +4,12 @@ require('babel-core/register');
 
 let EvanCoin = artifacts.require("EvanCoin");
 
+// Calculate number of remaining hours
+
+const HOURS_REMAINING = (Date.parse("2063-10-01T00:00:00Z") - Date.parse("2017-10-01T00:00:00Z"))/(60 * 60 * 1000);
+const DECIMALS = 2;
+const HOURS_WITH_DECIMALS = HOURS_REMAINING * Math.pow(10, DECIMALS);
+
 contract('EvanCoin', function(accounts) {
 
   it("should have the right initial variables", async () => {
@@ -18,9 +24,9 @@ contract('EvanCoin', function(accounts) {
 
     assert.equal(name, "EvanCoin", "Wrong name");
     assert.equal(symbol, "EVAN", "Wrong symbol");
-    assert.equal(decimals, "2", "Wrong decimals");
-    assert.equal(INITIAL_SUPPLY, 40323600, "Wrong initial supply");
-    assert.equal(totalSupply, 40323600, "Wrong total supply");
+    assert.equal(decimals.toNumber(), DECIMALS, "Wrong decimals");
+    assert.equal(INITIAL_SUPPLY, HOURS_WITH_DECIMALS, "Wrong initial supply");
+    assert.equal(totalSupply, HOURS_WITH_DECIMALS, "Wrong total supply");
   });
 
   it("should have the right initial balance", async () => {
@@ -29,7 +35,7 @@ contract('EvanCoin', function(accounts) {
 
     let initial = await instance.balanceOf.call(accounts[0]);
 
-    assert.equal(initial, 40323600, "Wrong initial balance for first account");
+    assert.equal(initial, HOURS_WITH_DECIMALS, "Wrong initial balance for first account");
   });
 
   it("should transfer EvanCoin between accounts", async () => {
